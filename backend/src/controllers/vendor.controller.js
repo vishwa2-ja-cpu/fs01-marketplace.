@@ -2,6 +2,7 @@ const { z } = require('zod');
 const Vendor = require('../models/Vendor');
 const AppError = require('../utils/AppError');
 const asyncHandler = require('../utils/asyncHandler');
+const { syncVendor } = require('../services/search');
 
 const schemas = {
   apply: z.object({ storeName: z.string().min(2).max(80), description: z.string().max(1000).default('') }),
@@ -27,6 +28,7 @@ const getMe = asyncHandler(async (req, res) => {
 const updateMe = asyncHandler(async (req, res) => {
   const vendor = await Vendor.findOneAndUpdate({ userId: req.user.id }, req.body, { new: true, runValidators: true });
   if (!vendor) throw new AppError(404, 'No vendor profile yet');
+  await syncVendor(vendor); // keep the store name in search results up to date
   res.json({ vendor });
 });
 

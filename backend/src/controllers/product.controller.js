@@ -3,6 +3,7 @@ const Product = require('../models/Product');
 const Vendor = require('../models/Vendor');
 const AppError = require('../utils/AppError');
 const asyncHandler = require('../utils/asyncHandler');
+const { indexProduct, removeProduct } = require('../services/search');
 
 const base = z.object({
   title: z.string().min(2).max(120),
@@ -12,7 +13,7 @@ const base = z.object({
   stock: z.number().int().min(0).max(100000),
   images: z.array(z.string().url()).max(8).default([]),
 });
-const schemas = { create: base, update: base.partial().omit({}).strict() };
+const schemas = { create: base, update: base.partial().strict() };
 
 // Public: only active products from approved vendors.
 const list = asyncHandler(async (req, res) => {
@@ -40,6 +41,7 @@ const mine = asyncHandler(async (req, res) => {
 
 const create = asyncHandler(async (req, res) => {
   const product = await Product.create({ ...req.body, vendorId: req.vendor._id });
+  await indexProduct(product, req.vendor);
   res.status(201).json({ product });
 });
 
@@ -55,6 +57,7 @@ const update = asyncHandler(async (req, res) => {
   const product = await loadOwned(req);
   Object.assign(product, req.body);
   await product.save();
+  await indexProduct(product, req.vendor);
   res.json({ product });
 });
 
@@ -63,6 +66,7 @@ const remove = asyncHandler(async (req, res) => {
   const product = await loadOwned(req);
   product.isActive = false;
   await product.save();
+  await removeProduct(product._id);
   res.json({ message: 'Product removed' });
 });
 

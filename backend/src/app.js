@@ -7,7 +7,7 @@ const AppError = require('./utils/AppError');
 
 const app = express();
 app.use(helmet());
-app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:5173' }));
+app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:5173', exposedHeaders: ['X-Cache'] }));
 app.use(express.json({ limit: '1mb' }));
 if (process.env.NODE_ENV !== 'test') app.use(morgan('dev'));
 
@@ -17,7 +17,8 @@ app.use('/api/vendors', require('./routes/vendor.routes'));
 app.use('/api/admin', require('./routes/admin.routes'));
 app.use('/api/products', require('./routes/product.routes'));
 app.use('/api/uploads', require('./routes/upload.routes'));
-// Next steps add: /api/search, /api/cart, /api/orders ...
+app.use('/api/search', require('./routes/search.routes'));
+// Next steps add: /api/cart, /api/orders ...
 
 app.use((_req, _res, next) => next(new AppError(404, 'Route not found')));
 app.use(errorHandler);
